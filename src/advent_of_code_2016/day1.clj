@@ -1,4 +1,4 @@
-(ns advent-of-code-2016.core
+(ns advent-of-code-2016.day1
   (:require
     [clojure.java.io :as io]))
 
@@ -16,24 +16,32 @@
 (defn move-y [direction value steps]
   (if (= direction :south) (- value steps) (if (= direction :north) (+ value steps) value)))
 
-(defn movenext [state step]
+(defn movenext [s step]
+  (def state (last s))
   (def new-direction ((understand-direction (str (first step))) (state :direction)))
   (def steps (repeat (Long/parseLong (apply str (next step))) 1))
-  (map #({ :direction new-direction, :x (move-x new-direction (state :x) steps), :y (move-y new-direction (state :y) steps) }) steps))
+
+  (reductions #(zipmap [:direction :x :y]
+                       [new-direction
+                        (move-x new-direction (%1 :x) %2)
+                        (move-y new-direction (%1 :y) %2)])
+       state
+       steps))
 
 (defn distance [point]
   (+ (Math/abs (point :x)) (Math/abs (point :y))))
 
-(defn part-one [d start]
+(defn part1 [d start]
   (->>
    d
-   (reduce movenext start)
+   (reduce movenext [start])
+   (last)
    (distance)))
 
-(defn part-two [d start]
-  (def values (reductions movenext (list start) d))
+(defn part2 [d start]
+  (def values (next (reduce movenext [start] d)))
+  (println values)
 
-  (def end
     (reduce (fn [acc step]
               (let [position (select-keys step [:x :y])]
 
@@ -42,10 +50,10 @@
                 (conj acc position))))
             #{}
             values))
-  end)
 
 (defn -main []
    (println (part-two (map name day1) { :direction :north, :x 0, :y 0 } )))
 
-(part-one (map name day1) { :direction :north, :x 0, :y 0 })
-(part-two (map name day1) { :direction :north, :x 0, :y 0 })
+(def s { :direction :north :x 0 :y 0 })
+(part1 (map name day1) s)
+(part2 (map name day1) s)
